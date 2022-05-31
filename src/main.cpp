@@ -6,6 +6,7 @@
 #include "anim.h"
 #include "ntp.h"
 #include "VFD.h"
+#include "mqtt.h"
 
 #define WIFI_TIMEOUT_SEC 15
 #define ARRAY_LEN(X) (sizeof (X) / sizeof (X)[0])
@@ -36,6 +37,7 @@ static void connected(void)
   anim_play(anim_init, 4, 5, Vfd);
   ntp_init();
   anim_play(anim_init, 9, 11, Vfd);
+  mqtt_init();
 }
 
 void setup(void)
@@ -51,6 +53,13 @@ void setup(void)
 
   ntp_utc_offset_sec = WiFiSettings.integer("utc_offset_sec", 1 * 60 * 60, "UTC offset (seconds)");
   ntp_update_interval_sec = WiFiSettings.integer("update_interval_sec", 24 * 60 * 60, "NTP update interval (seconds)");
+  
+  mqtt_enabled = WiFiSettings.checkbox("mqtt_enabled", false);
+  mqtt_host = WiFiSettings.string("mqtt_host", "mqtt.example.org");
+  mqtt_username = WiFiSettings.string("mqtt_username", "username");
+  mqtt_password = WiFiSettings.string("mqtt_password", "password");
+  mqtt_topic = WiFiSettings.string("mqtt_topic", "topic");
+  mqtt_port = WiFiSettings.integer("mqtt_port", 0, 65535, 1883);
 
   WiFiSettings.onWaitLoop = connecting;
   WiFiSettings.onSuccess = connected;
@@ -65,5 +74,6 @@ void loop(void)
   ntp_fmt(b);
   Vfd.write(b);
   ArduinoOTA.handle();
+  mqtt_loop();
   delay(100);
 }
